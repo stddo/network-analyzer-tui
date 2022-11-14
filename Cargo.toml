@@ -1,0 +1,24 @@
+[package]
+name = "network-analyzer"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pcap = "*"
+sysinfo = "*"
+tui = "*"
+crossterm = "*"
+
+[dependencies.windows]
+version = "*"
+features = [
+    "Win32_Foundation",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+    "Win32_System_RemoteDesktop",
+    "Win32_Networking_WinSock"
+]
