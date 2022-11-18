@@ -5,7 +5,7 @@ use ui::event::EventHandler;
 use ui::Window;
 
 use crate::app::ui::views::View;
-use crate::app::ui::views::welcome_screen::WelcomeScreen;
+use ui::views::WelcomeScreen;
 
 mod core;
 mod ui;
