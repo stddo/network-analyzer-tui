@@ -19,7 +19,7 @@ pub trait View {
 
 #[derive(Default)]
 pub struct AppsTableView {
-    items: HashMap<u32, LocalProcess>,
+    items: Vec<LocalProcess>,
     pub table_state: TableState
 }
 
@@ -31,8 +31,7 @@ impl View for AppsTableView {
                      KeyCode::Char(key) => {
                          match key {
                              'l' => {
-                                 let a = get_apps();
-                                 self.items(a);
+                                 self.items(get_apps());
                              }
                              _ => {}
                          }
@@ -42,6 +41,14 @@ impl View for AppsTableView {
                      }
                      KeyCode::Down => {
                          self.next();
+                     }
+                     KeyCode::Enter => {
+                         if let Some(selected) = self.table_state.selected() {
+                             let a = &(selected as u32);
+                             if let Some(process) = self.items.get(selected) {
+                                 return Some(Box::new(ProcessPacketsView::new(process.clone())));
+                             }
+                         }
                      }
                      _ => {}
                 }
@@ -67,8 +74,8 @@ impl View for AppsTableView {
 
         let rows = self.items.iter().map(|item| {
             let cells = vec![
-                Cell::from(item.0.to_string()),
-                Cell::from(item.1.name.clone())
+                Cell::from(item.pid.to_string()),
+                Cell::from(item.name.clone())
             ];
             Row::new(cells).height(2).bottom_margin(1)
         });
@@ -129,7 +136,7 @@ impl AppsTableView {
         self.table_state.select(Some(i));
     }
 
-    pub fn items(&mut self, items: HashMap<u32, LocalProcess>) {
+    pub fn items(&mut self, items: Vec<LocalProcess>) {
         self.items = items;
         self.table_state.select(Some(0))
     }
@@ -170,5 +177,62 @@ impl View for WelcomeScreen {
         f.render_widget(paragraph, Layout::default()
             .constraints([Constraint::Percentage(100)])
             .split(f.size())[0]);
+    }
+}
+
+pub struct ProcessPacketsView {
+    process: LocalProcess,
+    table_state: TableState
+}
+
+impl View for ProcessPacketsView {
+    fn handle_event(&mut self, event: Event) -> Option<Box<dyn View + Send>> {
+        match event {
+            Event::Key(key_event) => {
+                if let KeyCode::Backspace = key_event.code {
+                    return Some(Box::new(AppsTableView::new()));
+                }
+            }
+            _ => {}
+        }
+
+        None
+    }
+
+    fn draw(&mut self, f: &mut Frame<CrosstermBackend<Stdout>>) {
+        let rects = Layout::default()
+            .constraints([Constraint::Percentage(100)].as_ref())
+            .split(f.size());
+
+        let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+        let normal_style = Style::default().bg(Color::Blue);
+        let header_cells = ["src ip", "src port", "dst ip", "dst port", "protocol"].iter().map(|h| Cell::from(*h));
+        let header = Row::new(header_cells)
+            .style(normal_style)
+            .height(1)
+            .bottom_margin(1);
+
+        let t = Table::new([])
+            .header(header)
+            .block(Block::default().borders(Borders::ALL).title(format!("{} - {}", self.process.pid, self.process.name)))
+            .highlight_style(selected_style)
+            .highlight_symbol(">> ")
+            .widths(&[
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+            ]);
+        f.render_stateful_widget(t, rects[0], &mut self.table_state);
+    }
+}
+
+impl ProcessPacketsView {
+    pub fn new(process: LocalProcess) -> ProcessPacketsView {
+        ProcessPacketsView {
+            process,
+            table_state: Default::default()
+        }
     }
 }

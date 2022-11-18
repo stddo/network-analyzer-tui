@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 
+#[derive(Clone)]
 pub struct LocalProcess {
     pub local_ip: u32,
     pub local_port: u16,

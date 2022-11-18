@@ -9,12 +9,12 @@ use windows::Win32::NetworkManagement::IpHelper::{GetTcpTable2, MIB_TCPROW2, MIB
 
 use crate::common::app::LocalProcess;
 
-pub fn collect_open_ports_by_app() -> Result<HashMap<u32, LocalProcess>, Error> {
+pub fn collect_open_ports_by_app() -> Result<Vec<LocalProcess>, Error> {
     let els = unsafe { MIB_TCPTABLE2::get()? };
-    let mut apps = HashMap::new();
+    let mut apps = vec![];
     for row in els {
         unsafe {
-            apps.insert(row.dwOwningPid, LocalProcess {
+            apps.push(LocalProcess {
                 local_ip: ntohl(row.dwLocalAddr),
                 local_port: ntohs(row.dwLocalPort as u16),
                 remote_ip: ntohl(row.dwRemoteAddr),
