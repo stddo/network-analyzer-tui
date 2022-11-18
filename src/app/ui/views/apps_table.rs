@@ -22,20 +22,23 @@ impl View for AppsTableView {
     fn handle_event(&mut self, event: Event) -> Option<Box<dyn View + Send>> {
         match event {
             Event::Key(key_event) => {
-                if let KeyCode::Char(key) = key_event.code {
-                    match key {
-                        'l' => {
-                            let a = get_apps();
-                            self.items(a);
-                        }
-                        'n' => {
-                            self.next();
-                        }
-                        'p' => {
-                            self.prev();
-                        }
-                        _ => {}
-                    }
+                 match key_event.code {
+                     KeyCode::Char(key) => {
+                         match key {
+                             'l' => {
+                                 let a = get_apps();
+                                 self.items(a);
+                             }
+                             _ => {}
+                         }
+                     }
+                     KeyCode::Up => {
+                         self.prev();
+                     }
+                     KeyCode::Down => {
+                         self.next();
+                     }
+                     _ => {}
                 }
             }
             _ => {}
@@ -78,6 +81,13 @@ impl View for AppsTableView {
 }
 
 impl AppsTableView {
+    pub fn new() -> AppsTableView {
+        AppsTableView {
+            items: get_apps(),
+            table_state: Default::default()
+        }
+    }
+
     pub fn next(&mut self) {
         if self.items.len() == 0 {
             return;

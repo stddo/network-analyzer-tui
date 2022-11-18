@@ -1,15 +1,14 @@
 use std::io;
 use std::sync::{Arc, Mutex};
 
-use event::EventHandler;
+use ui::event::EventHandler;
 use ui::Window;
 
-use crate::app::ui::views::apps_table::AppsTableView;
 use crate::app::ui::views::View;
+use crate::app::ui::views::welcome_screen::WelcomeScreen;
 
 mod core;
 mod ui;
-mod event;
 
 pub struct App {
     window: Window,
@@ -45,7 +44,7 @@ impl AppState {
     fn new() -> AppState {
         AppState {
             running: true,
-            view: Box::new(AppsTableView::default())
+            view: Box::new(WelcomeScreen::default())
         }
     }
 

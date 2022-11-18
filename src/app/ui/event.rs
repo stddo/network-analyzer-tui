@@ -35,6 +35,8 @@ impl EventHandler {
                                         delegate_event(&app_state, event);
                                     }
                                 }
+                            } else {
+                                delegate_event(&app_state, event);
                             }
                         }
                         _ => {

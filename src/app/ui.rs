@@ -14,6 +14,7 @@ use tui::Terminal;
 use crate::app::AppState;
 
 pub mod views;
+pub mod event;
 
 pub struct Window {
     app_state: Arc<Mutex<AppState>>
