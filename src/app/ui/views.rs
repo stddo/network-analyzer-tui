@@ -94,9 +94,11 @@ impl View for AppsTableView {
 
 impl AppsTableView {
     pub fn new() -> AppsTableView {
+        let mut table_state = TableState::default();
+        table_state.select(Some(0));
         AppsTableView {
             items: get_apps(),
-            table_state: Default::default()
+            table_state
         }
     }
 
