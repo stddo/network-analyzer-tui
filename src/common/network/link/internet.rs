@@ -51,7 +51,7 @@ impl IPHeader {
     pub fn protocol(&self) -> u8 {
         match self {
             V4Header(header) => header.protocol,
-            V6Header(header) => 0/*header.next_header*/
+            V6Header(_header) => 0/*header.next_header*/
         }
     }
 }

@@ -1,5 +1,5 @@
 use std::io::stdout;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
@@ -17,11 +17,11 @@ pub mod views;
 pub mod event;
 
 pub struct Window {
-    app_state: Arc<Mutex<AppState>>
+    app_state: Arc<AppState>
 }
 
 impl Window {
-    pub fn new(app_state: Arc<Mutex<AppState>>) -> Window {
+    pub fn new(app_state: Arc<AppState>) -> Window {
         Window {
             app_state
         }
@@ -38,10 +38,10 @@ impl Window {
 
             let mut last_time = Instant::now();
 
-            while app_state.lock().unwrap().running {
+            while *app_state.running.lock().unwrap() {
                 terminal.draw(|f| {
-                    let mut lock = app_state.lock().unwrap();
-                    lock.view.draw(f);
+                    let mut lock = app_state.view.lock().unwrap();
+                    lock.draw(f, app_state.clone());
                 }).unwrap();
 
                 let delay = Duration::from_millis(100).saturating_sub(last_time.elapsed());

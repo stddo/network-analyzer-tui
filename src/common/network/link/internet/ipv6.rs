@@ -9,7 +9,7 @@ pub struct IPv6Header {
 }
 
 impl IPv6Header {
-    pub(crate) fn new(bytes: &[u8]) -> IPv6Header {
+    pub(crate) fn new(_bytes: &[u8]) -> IPv6Header {
         IPv6Header {}
     }
 }

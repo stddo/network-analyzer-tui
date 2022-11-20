@@ -14,7 +14,7 @@ impl Sniffer {
         }
     }
 
-    pub fn sniff(&self, f: impl Fn(Ethernet2Frame)) {
+    pub fn sniff(&self, f: impl Fn(Ethernet2Frame) -> bool) {
         let mut cap = Capture::from_device(self.device.clone()).unwrap()
             .timeout(0).open().unwrap();
         //cap.filter("internet and udp", false);
@@ -24,14 +24,15 @@ impl Sniffer {
                 Ok(packet) => {
                     let frame = from_ethernet_bytes(packet.data);
                     if let Ok(frame) = frame {
-                        f(frame);
+                        if f(frame) {
+                            break;
+                        }
                     }
                 }
                 Err(e) => {
                     if let Error::TimeoutExpired = e {
                     } else {
                         println!("{:?}", e);
-                        let i = 0;
                     }
                 }
             }
