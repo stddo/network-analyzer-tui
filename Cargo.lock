@@ -220,6 +220,7 @@ name = "network-analyzer"
 version = "0.1.0"
 dependencies = [
  "crossterm",
+ "either",
  "pcap",
  "sysinfo",
  "tui",

@@ -75,7 +75,7 @@ impl View for AppsTableView {
 
         let selected_style = Style::default().add_modifier(Modifier::REVERSED);
         let normal_style = Style::default().bg(Color::Blue);
-        let header_cells = ["pid", "name"].iter().map(|h| Cell::from(*h));
+        let header_cells = ["pid", "name", "remote port", "local port"].iter().map(|h| Cell::from(*h));
         let header = Row::new(header_cells)
             .style(normal_style)
             .height(1)
@@ -85,6 +85,8 @@ impl View for AppsTableView {
             let cells = vec![
                 Cell::from(item.pid.to_string()),
                 Cell::from(item.name.clone()),
+                Cell::from(item.remote_port.to_string()),
+                Cell::from(item.local_port.to_string()),
             ];
             Row::new(cells).height(2).bottom_margin(1)
         });
@@ -94,8 +96,10 @@ impl View for AppsTableView {
             .highlight_style(selected_style)
             .highlight_symbol(">> ")
             .widths(&[
-                Constraint::Percentage(50),
-                Constraint::Percentage(50)
+                Constraint::Ratio(1, 4),
+                Constraint::Ratio(1, 4),
+                Constraint::Ratio(1, 4),
+                Constraint::Ratio(1, 4),
             ]);
         f.render_stateful_widget(t, rects[0], &mut self.table_state);
     }
@@ -223,16 +227,21 @@ impl View for ProcessPacketsView {
             .height(1)
             .bottom_margin(1);
 
-        let rows = if let Some(ref packet_retriever) = *app_state.packet_retriever.lock().unwrap() {
-            let packet_retriever = packet_retriever.packets.clone();
-            let packets = packet_retriever.lock().unwrap();
+        let mut rows = vec![];
+        if let Some(ref packet_retriever) = *app_state.packet_retriever.lock().unwrap() {
+            let packets = packet_retriever.packets.clone();
+            let mut i = 0;
+            let y = f.size().height - 2;
+            for packet in &*packets {
+                if i == y {
+                    break;
+                }
 
-            packets.iter().filter_map(|packet| {
                 match &packet.payload.header {
                     IPHeader::V4Header(v4) => {
                         match &packet.payload.payload.header {
                             TransportHeader::TCP(tcp) => {
-                                Some(Row::new([
+                                rows.push(Row::new([
                                     Cell::from(format_ipv4_address(v4.src_addr)),
                                     Cell::from(tcp.src_port.to_string()),
                                     Cell::from(format_ipv4_address(v4.dst_addr)),
@@ -241,7 +250,7 @@ impl View for ProcessPacketsView {
                                 ]))
                             }
                             TransportHeader::UDP(_) => {
-                                Some(Row::new([
+                                rows.push(Row::new([
                                     Cell::from(format_ipv4_address(v4.src_addr)),
                                     Cell::from("none"),
                                     Cell::from(format_ipv4_address(v4.dst_addr)),
@@ -249,19 +258,15 @@ impl View for ProcessPacketsView {
                                     Cell::from("TCP")
                                 ]))
                             }
-                            TransportHeader::Default(_) => {
-                                None
-                            }
+                            TransportHeader::Default(_) => {}
                         }
                     }
-                    IPHeader::V6Header(_) => {
-                        None
-                    }
+                    IPHeader::V6Header(_) => {}
                 }
-            }).collect()
-        } else {
-            vec![]
-        };
+
+                i += 1;
+            }
+        }
 
         let t = Table::new(rows)
             .header(header)

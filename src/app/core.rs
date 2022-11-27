@@ -8,11 +8,15 @@ use network_analyzer::network::link::internet::IPHeader;
 use network_analyzer::network::link::internet::transport::TransportHeader;
 use network_analyzer::pcap::Sniffer;
 
+use crate::app::core::multithreading::RwList;
+
+mod multithreading;
+
 pub struct PacketRetriever {
     running: Arc<Mutex<bool>>,
     join_handle: Option<JoinHandle<()>>,
     process: Arc<LocalProcess>,
-    pub packets: Arc<Mutex<Vec<Ethernet2Frame>>>
+    pub packets: Arc<RwList<Ethernet2Frame>>
 }
 
 impl Drop for PacketRetriever {
@@ -30,7 +34,7 @@ impl PacketRetriever {
             running: Arc::new(Mutex::new(true)),
             join_handle: None,
             process: Arc::new(process),
-            packets: Arc::new(Mutex::new(vec![]))
+            packets: Arc::new(RwList::new())
         }
     }
 
@@ -56,8 +60,7 @@ impl PacketRetriever {
                 };
 
                 if let Some(packet) = packet {
-                    let mut lock = packets.lock().unwrap();
-                    lock.push(packet);
+                    packets.add(packet);
                 }
                 return !*running.lock().unwrap();
             });

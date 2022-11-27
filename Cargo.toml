@@ -11,6 +11,7 @@ pcap = "*"
 sysinfo = "*"
 tui = "*"
 crossterm = "*"
+either = "*"
 
 [dependencies.windows]
 version = "*"
