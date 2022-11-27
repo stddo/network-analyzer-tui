@@ -12,5 +12,7 @@ pub fn get_apps() -> Vec<LocalProcess> {
             app.name = name.clone();
         }
     });
-    apps
+    apps.into_iter().filter(|app| {
+        app.pid != 0 && app.pid != 4
+    }).collect()
 }
