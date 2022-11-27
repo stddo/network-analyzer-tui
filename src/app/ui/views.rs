@@ -249,13 +249,13 @@ impl View for ProcessPacketsView {
                                     Cell::from("TCP")
                                 ]))
                             }
-                            TransportHeader::UDP(_) => {
+                            TransportHeader::UDP(udp) => {
                                 rows.push(Row::new([
                                     Cell::from(format_ipv4_address(v4.src_addr)),
-                                    Cell::from("none"),
+                                    Cell::from(udp.src_port.to_string()),
                                     Cell::from(format_ipv4_address(v4.dst_addr)),
-                                    Cell::from("none"),
-                                    Cell::from("TCP")
+                                    Cell::from(udp.dst_port.to_string()),
+                                    Cell::from("UDP")
                                 ]))
                             }
                             TransportHeader::Default(_) => {}
