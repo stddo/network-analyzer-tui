@@ -1,3 +1,4 @@
+use std::net::{Ipv4Addr, Ipv6Addr};
 use crate::common::network::link::internet::IPHeader::{V4Header, V6Header};
 use crate::common::network::link::internet::ipv4::IPv4Header;
 use crate::common::network::link::internet::ipv6::IPv6Header;
@@ -36,7 +37,7 @@ impl IPHeader {
         let version = bytes[0] >> 4;
         match version {
             4 => Ok(V4Header(IPv4Header::new(bytes)?)),
-            6 => Ok(V6Header(IPv6Header::new(bytes))),
+            6 => Ok(V6Header(IPv6Header::new(bytes)?)),
             v => Err(ReadError::IPUnexpectedVersion(v))
         }
     }
@@ -51,7 +52,29 @@ impl IPHeader {
     pub fn protocol(&self) -> u8 {
         match self {
             V4Header(header) => header.protocol,
-            V6Header(_header) => 0/*header.next_header*/
+            V6Header(header) => header.next_header
+        }
+    }
+
+    pub fn formatted_src_ip(&self) -> String {
+        match self {
+            V4Header(header) => {
+                Ipv4Addr::from(header.src_addr).to_string()
+            }
+            V6Header(header) => {
+                Ipv6Addr::from(header.src_addr).to_string()
+            }
+        }
+    }
+
+    pub fn formatted_dst_ip(&self) -> String {
+        match self {
+            V4Header(header) => {
+                Ipv4Addr::from(header.dst_addr).to_string()
+            }
+            V6Header(header) => {
+                Ipv6Addr::from(header.dst_addr).to_string()
+            }
         }
     }
 }

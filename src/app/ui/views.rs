@@ -242,18 +242,18 @@ impl View for ProcessPacketsView {
                         match &packet.payload.payload.header {
                             TransportHeader::TCP(tcp) => {
                                 rows.push(Row::new([
-                                    Cell::from(format_ipv4_address(v4.src_addr)),
+                                    Cell::from(packet.payload.header.formatted_src_ip()),
                                     Cell::from(tcp.src_port.to_string()),
-                                    Cell::from(format_ipv4_address(v4.dst_addr)),
+                                    Cell::from(packet.payload.header.formatted_dst_ip()),
                                     Cell::from(tcp.dst_port.to_string()),
                                     Cell::from("TCP")
                                 ]))
                             }
                             TransportHeader::UDP(udp) => {
                                 rows.push(Row::new([
-                                    Cell::from(format_ipv4_address(v4.src_addr)),
+                                    Cell::from(packet.payload.header.formatted_src_ip()),
                                     Cell::from(udp.src_port.to_string()),
-                                    Cell::from(format_ipv4_address(v4.dst_addr)),
+                                    Cell::from(packet.payload.header.formatted_dst_ip()),
                                     Cell::from(udp.dst_port.to_string()),
                                     Cell::from("UDP")
                                 ]))
@@ -291,8 +291,4 @@ impl ProcessPacketsView {
             table_state: Default::default()
         }
     }
-}
-
-fn format_ipv4_address(address: u32) -> String {
-    format!("{}.{}.{}.{}", (address >> 24) as u8, (address >> 16) as u8, (address >> 8) as u8, address as u8)
 }

@@ -11,8 +11,8 @@ pub struct IPv4Header {
     pub ttl: u8,
     pub protocol: u8,
     pub header_checksum: u16,
-    pub src_addr: u32,
-    pub dst_addr: u32,
+    pub src_addr: [u8; 4],
+    pub dst_addr: [u8; 4],
     pub options: Vec<u8>
 }
 
@@ -43,8 +43,8 @@ impl IPv4Header {
             ttl: bytes[8],
             protocol: bytes[9],
             header_checksum: u16::from_be_bytes(bytes[10..12].try_into().unwrap()),
-            src_addr: u32::from_be_bytes(bytes[12..16].try_into().unwrap()),
-            dst_addr: u32::from_be_bytes(bytes[16..20].try_into().unwrap()),
+            src_addr: bytes[12..16].try_into().unwrap(),
+            dst_addr: bytes[16..20].try_into().unwrap(),
             options
         })
     }
