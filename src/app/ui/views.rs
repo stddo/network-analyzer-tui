@@ -11,7 +11,7 @@ use tui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState};
 
 use network_analyzer::app::LocalProcess;
 use network_analyzer::get_apps;
-use network_analyzer::network::link::internet::IPHeader;
+use network_analyzer::network::link::internet::IpHeader;
 use network_analyzer::network::link::internet::transport::TransportHeader;
 
 use crate::app::AppState;
@@ -237,32 +237,17 @@ impl View for ProcessPacketsView {
                     break;
                 }
 
-                match &packet.payload.header {
-                    IPHeader::V4Header(v4) => {
-                        match &packet.payload.payload.header {
-                            TransportHeader::TCP(tcp) => {
-                                rows.push(Row::new([
-                                    Cell::from(packet.payload.header.formatted_src_ip()),
-                                    Cell::from(tcp.src_port.to_string()),
-                                    Cell::from(packet.payload.header.formatted_dst_ip()),
-                                    Cell::from(tcp.dst_port.to_string()),
-                                    Cell::from("TCP")
-                                ]))
-                            }
-                            TransportHeader::UDP(udp) => {
-                                rows.push(Row::new([
-                                    Cell::from(packet.payload.header.formatted_src_ip()),
-                                    Cell::from(udp.src_port.to_string()),
-                                    Cell::from(packet.payload.header.formatted_dst_ip()),
-                                    Cell::from(udp.dst_port.to_string()),
-                                    Cell::from("UDP")
-                                ]))
-                            }
-                            TransportHeader::Default(_) => {}
-                        }
+                rows.push(Row::new([
+                    Cell::from(packet.ip_header.formatted_src_ip()),
+                    Cell::from(packet.tp_header.src_port().to_string()),
+                    Cell::from(packet.ip_header.formatted_src_ip()),
+                    Cell::from(packet.tp_header.dst_port().to_string()),
+                    match &packet.tp_header {
+                        TransportHeader::TCP(_) => Cell::from("TCP"),
+                        TransportHeader::UDP(_) => Cell::from("UDP"),
+                        TransportHeader::Default(_) => Cell::from("UNKNOWN")
                     }
-                    IPHeader::V6Header(_) => {}
-                }
+                ]));
 
                 i += 1;
             }

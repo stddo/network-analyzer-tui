@@ -1,4 +1,4 @@
-use crate::common::network::SufficientOffset;
+use crate::network::link::PacketReader;
 use crate::network::ReadError;
 
 pub struct UDPHeader {
@@ -8,13 +8,11 @@ pub struct UDPHeader {
     pub checksum: u16
 }
 
-impl SufficientOffset for UDPHeader {
-    const SIZE: usize = 8;
-}
-
 impl UDPHeader {
-    pub fn new(bytes: &[u8]) -> Result<UDPHeader, ReadError> {
-        Self::assert_offset_size(bytes.len())?;
+    const SIZE: usize = 8;
+
+    pub fn new<'a, 'b: 'a>(packet_reader: &'a mut PacketReader<'b>) -> Result<UDPHeader, ReadError> {
+        let bytes = packet_reader.read(Self::SIZE)?;
 
         Ok(UDPHeader {
             src_port: u16::from_be_bytes(bytes[..2].try_into().unwrap()),

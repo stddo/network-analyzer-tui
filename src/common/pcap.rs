@@ -1,7 +1,7 @@
+use std::net::{IpAddr, Ipv4Addr};
 use pcap::{Capture, Device, Error};
 
-use crate::common::network::ethernet2::Ethernet2Frame;
-use crate::common::network::link::from_ethernet_bytes;
+use crate::common::network::link::Packet;
 
 pub struct Sniffer {
     device: Device
@@ -9,12 +9,21 @@ pub struct Sniffer {
 
 impl Sniffer {
     pub fn new() -> Sniffer {
+        let device = {
+            let devices = Device::list().unwrap();
+            devices.iter().find(|device| {
+                device.addresses.iter().any(|addr| if let IpAddr::V4(addr) = addr.addr {
+                    addr == Ipv4Addr::new(192, 168, 178, 20)
+                } else { false })
+            }).unwrap().clone()
+        };
+
         Sniffer {
-            device: Device::list().unwrap()[8].clone()
+            device
         }
     }
 
-    pub fn sniff(&self, f: impl Fn(Ethernet2Frame) -> bool) {
+    pub fn sniff(&self, f: impl Fn(Packet) -> bool) {
         let mut cap = Capture::from_device(self.device.clone()).unwrap()
             .timeout(0).open().unwrap();
         //cap.filter("internet and udp", false);
@@ -22,7 +31,7 @@ impl Sniffer {
         loop {
             match cap.next() {
                 Ok(packet) => {
-                    let frame = from_ethernet_bytes(packet.data);
+                    let frame = Packet::from_ethernet_bytes(packet.data);
                     if let Ok(frame) = frame {
                         if f(frame) {
                             break;

@@ -1,6 +1,7 @@
-use crate::common::network::{ReadError, SufficientOffset};
+use crate::common::network::ReadError;
+use crate::network::link::PacketReader;
 
-pub struct IPv4Header {
+pub struct Ipv4Header {
     pub ihl: u8,
     pub dscp: u8,
     pub ecn: u8,
@@ -16,23 +17,27 @@ pub struct IPv4Header {
     pub options: Vec<u8>
 }
 
-impl SufficientOffset for IPv4Header {
+impl Ipv4Header {
     const SIZE: usize = 20;
-}
 
-impl IPv4Header {
-    pub fn new(bytes: &[u8]) -> Result<IPv4Header, ReadError> {
-        Self::assert_offset_size(bytes.len())?;
+    pub fn new<'a, 'b: 'a>(packet_reader: &'a mut PacketReader<'b>) -> Result<Ipv4Header, ReadError> {
+        let bytes = packet_reader.peek(Self::SIZE)?;
 
         let ihl = bytes[0] & 0x0F;
         let options_end = ihl as usize * 4;
+        let bytes = if ihl > 5 {
+            packet_reader.read(options_end)?
+        } else {
+            bytes
+        };
+
         let options = if ihl > 5 {
             bytes[20..options_end].to_vec()
         } else {
             vec![]
         };
 
-        Ok(IPv4Header {
+        Ok(Ipv4Header {
             ihl,
             dscp: bytes[1] >> 2,
             ecn: bytes[1] & 0x03,
@@ -50,7 +55,7 @@ impl IPv4Header {
     }
 }
 
-impl IPv4Header {
+impl Ipv4Header {
     pub fn len(&self) -> usize {
         self.ihl as usize * 4
     }
