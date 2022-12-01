@@ -1,10 +1,10 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use crate::common::network::link::internet::IpHeader::{V4Header, V6Header};
-use crate::common::network::link::internet::ipv4::Ipv4Header;
-use crate::common::network::link::internet::ipv6::Ipv6Header;
-use crate::common::network::ReadError;
-use crate::network::link::PacketReader;
+use crate::library::common::network::link::internet::IpHeader::{V4Header, V6Header};
+use crate::library::common::network::link::internet::ipv4::Ipv4Header;
+use crate::library::common::network::link::internet::ipv6::Ipv6Header;
+use crate::library::common::network::ReadError;
+use crate::library::common::network::packet::PacketReader;
 
 pub mod transport;
 pub mod ipv4;
@@ -16,8 +16,7 @@ pub enum IpHeader {
 }
 
 impl IpHeader {
-    pub fn new<'a, 'b: 'a>(packet_reader: &'a mut PacketReader<'b>) -> Result<IpHeader, ReadError> {
-        let version = packet_reader.peek(1)?[0] >> 4;
+    pub fn new<'a, 'b: 'a>(version: u8, packet_reader: &'a mut PacketReader<'b>) -> Result<IpHeader, ReadError> {
         match version {
             4 => Ok(V4Header(Ipv4Header::new(packet_reader)?)),
             6 => Ok(V6Header(Ipv6Header::new(packet_reader)?)),

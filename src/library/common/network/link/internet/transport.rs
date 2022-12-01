@@ -1,8 +1,8 @@
 use tcp::TCPHeader;
 use udp::UDPHeader;
 
-use crate::common::network::ReadError;
-use crate::network::link::PacketReader;
+use crate::library::common::network::ReadError;
+use crate::library::common::network::packet::PacketReader;
 
 pub mod application;
 pub mod tcp;

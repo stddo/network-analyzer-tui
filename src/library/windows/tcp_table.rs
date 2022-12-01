@@ -6,7 +6,7 @@ use windows::Win32::Foundation::ERROR_INSUFFICIENT_BUFFER;
 use windows::Win32::Networking::WinSock::{ntohl, ntohs};
 use windows::Win32::NetworkManagement::IpHelper::{GetTcpTable2, MIB_TCPROW2, MIB_TCPTABLE2};
 
-use crate::common::app::LocalProcess;
+use crate::library::common::app::LocalProcess;
 
 pub fn collect_open_ports_by_app() -> Result<Vec<LocalProcess>, Error> {
     let els = unsafe { MIB_TCPTABLE2::get()? };
@@ -18,8 +18,7 @@ pub fn collect_open_ports_by_app() -> Result<Vec<LocalProcess>, Error> {
                 local_port: ntohs(row.dwLocalPort as u16),
                 remote_ip: ntohl(row.dwRemoteAddr),
                 remote_port: ntohs(row.dwRemotePort as u16),
-                pid: row.dwOwningPid,
-                name: String::new()
+                pid: row.dwOwningPid
             });
         }
     }

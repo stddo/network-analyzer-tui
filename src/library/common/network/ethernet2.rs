@@ -1,6 +1,6 @@
 use std::mem;
-use crate::common::network::ReadError;
-use crate::network::link::PacketReader;
+use crate::library::common::network::ReadError;
+use crate::library::common::network::packet::PacketReader;
 
 pub struct Ethernet2Header {
     pub destination: [u8; 6],

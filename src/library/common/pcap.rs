@@ -1,7 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr};
 use pcap::{Capture, Device, Error};
 
-use crate::common::network::link::Packet;
+use crate::library::common::network::packet::Packet;
 
 pub struct Sniffer {
     device: Device

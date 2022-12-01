@@ -1,4 +1,4 @@
-use crate::network::link::PacketReader;
+use crate::library::common::network::packet::PacketReader;
 use crate::network::ReadError;
 
 pub struct UDPHeader {

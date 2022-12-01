@@ -1,10 +1,8 @@
-use crate::common::network::ReadError;
 use crate::network::ethernet2::Ethernet2Header;
 use crate::network::link::internet::IpHeader;
 use crate::network::link::internet::transport::application::ApplicationHeader;
 use crate::network::link::internet::transport::TransportHeader;
-
-pub mod internet;
+use crate::network::ReadError;
 
 pub struct Packet {
     pub lp_header: Ethernet2Header,
@@ -18,7 +16,7 @@ impl Packet {
         let mut packet_reader = PacketReader::new(bytes);
 
         let lp_header = Ethernet2Header::new(&mut packet_reader)?;
-        let ip_header = IpHeader::new(&mut packet_reader)?;
+        let ip_header = IpHeader::new(packet_reader.peek(1)?[0] >> 4, &mut packet_reader)?;
         let protocol = ip_header.protocol();
         Ok(Packet {
             lp_header,
@@ -42,7 +40,7 @@ impl<'a> PacketReader<'a> {
         }
     }
 
-    pub fn peek<'b>(&'b self, n: usize) -> Result<&'a [u8], ReadError> {
+    fn peek<'b>(&'b self, n: usize) -> Result<&'a [u8], ReadError> {
         if self.bytes.len() < self.position + n {
             return Err(ReadError::DataOffsetTooSmall(self.position + n - self.bytes.len()));
         }

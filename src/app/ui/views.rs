@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Stdout;
 use std::sync::Arc;
 
@@ -9,9 +10,7 @@ use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState};
 
-use network_analyzer::app::LocalProcess;
-use network_analyzer::get_apps;
-use network_analyzer::network::link::internet::IpHeader;
+use network_analyzer::app::App;
 use network_analyzer::network::link::internet::transport::TransportHeader;
 
 use crate::app::AppState;
@@ -25,7 +24,7 @@ pub trait View {
 
 #[derive(Default)]
 pub struct AppsTableView {
-    items: Vec<LocalProcess>,
+    items: HashMap<u32, App>,
     pub table_state: TableState,
 }
 
@@ -37,7 +36,7 @@ impl View for AppsTableView {
                     KeyCode::Char(key) => {
                         match key {
                             'l' => {
-                                self.items(get_apps());
+                                self.items(App::all_by_pids());
                             }
                             _ => {}
                         }
@@ -50,12 +49,12 @@ impl View for AppsTableView {
                     }
                     KeyCode::Enter => {
                         if let Some(selected) = self.table_state.selected() {
-                            if let Some(process) = self.items.get(selected) {
+                            if let Some(app) = self.items.values().nth(selected) {
                                 let mut lock = app_state.packet_retriever.lock().unwrap();
-                                let mut packet_retriever = PacketRetriever::new(process.clone());
+                                let mut packet_retriever = PacketRetriever::new(app.clone());
                                 packet_retriever.run();
                                 *lock = Some(packet_retriever);
-                                return Some(Box::new(ProcessPacketsView::new(process.clone())));
+                                return Some(Box::new(ProcessPacketsView::new(app.clone())));
                             }
                         }
                     }
@@ -81,12 +80,16 @@ impl View for AppsTableView {
             .height(1)
             .bottom_margin(1);
 
-        let rows = self.items.iter().map(|item| {
+        let rows = self.items.iter().map(|(pid, app)| {
             let cells = vec![
-                Cell::from(item.pid.to_string()),
-                Cell::from(item.name.clone()),
-                Cell::from(item.remote_port.to_string()),
-                Cell::from(item.local_port.to_string()),
+                Cell::from(pid.to_string()),
+                Cell::from(app.name.clone()),
+                Cell::from(app.processes.iter()
+                    .map(|process| { process.remote_port.to_string() })
+                    .reduce(|a, b| format!("{}, {}", a, b)).unwrap_or(String::new())),
+                Cell::from(app.processes.iter()
+                    .map(|process| { process.local_port.to_string() })
+                    .reduce(|a, b| format!("{}, {}", a, b)).unwrap_or(String::new())),
             ];
             Row::new(cells).height(2).bottom_margin(1)
         });
@@ -110,7 +113,7 @@ impl AppsTableView {
         let mut table_state = TableState::default();
         table_state.select(Some(0));
         AppsTableView {
-            items: get_apps(),
+            items: App::all_by_pids(),
             table_state,
         }
     }
@@ -151,7 +154,7 @@ impl AppsTableView {
         self.table_state.select(Some(i));
     }
 
-    pub fn items(&mut self, items: Vec<LocalProcess>) {
+    pub fn items(&mut self, items: HashMap<u32, App>) {
         self.items = items;
         self.table_state.select(Some(0))
     }
@@ -196,7 +199,7 @@ impl View for WelcomeScreen {
 }
 
 pub struct ProcessPacketsView {
-    process: LocalProcess,
+    app: App,
     table_state: TableState
 }
 
@@ -255,7 +258,7 @@ impl View for ProcessPacketsView {
 
         let t = Table::new(rows)
             .header(header)
-            .block(Block::default().borders(Borders::ALL).title(format!("{} - {}", self.process.pid, self.process.name)))
+            .block(Block::default().borders(Borders::ALL).title(format!("{}", self.app.name)))
             .highlight_style(selected_style)
             .highlight_symbol(">> ")
             .widths(&[
@@ -270,9 +273,9 @@ impl View for ProcessPacketsView {
 }
 
 impl ProcessPacketsView {
-    pub fn new(process: LocalProcess) -> ProcessPacketsView {
+    pub fn new(app: App) -> ProcessPacketsView {
         ProcessPacketsView {
-            process,
+            app,
             table_state: Default::default()
         }
     }

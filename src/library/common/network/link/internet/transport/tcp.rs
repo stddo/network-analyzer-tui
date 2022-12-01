@@ -1,5 +1,5 @@
-use crate::common::network::ReadError;
-use crate::network::link::PacketReader;
+use crate::library::common::network::ReadError;
+use crate::library::common::network::packet::PacketReader;
 
 pub struct TCPHeader {
     pub src_port: u16,
@@ -19,19 +19,13 @@ impl TCPHeader {
     const SIZE: usize = 20;
 
     pub fn new<'a, 'b: 'a>(packet_reader: &'a mut PacketReader<'b>) -> Result<TCPHeader, ReadError> {
-        let bytes = packet_reader.peek(Self::SIZE)?;
+        let bytes = packet_reader.read(Self::SIZE)?;
 
         let data_offset = bytes[12] >> 4;
         let options_end = data_offset as usize * 4;
 
-        let bytes = if data_offset > 5 {
-            packet_reader.read(options_end)?
-        } else {
-            bytes
-        };
-
         let options = if data_offset > 5 {
-            bytes[20..options_end].to_vec()
+            packet_reader.read(options_end)?.to_vec()
         } else {
             vec![]
         };
