@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::io::Stdout;
-use std::sync::Arc;
 
 use crossterm::event::{Event, KeyCode};
 use tui::backend::CrosstermBackend;
@@ -13,13 +12,12 @@ use tui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState};
 use network_analyzer::app::App;
 use network_analyzer::network::link::internet::transport::TransportHeader;
 
-use crate::app::AppState;
 use crate::app::core::PacketRetriever;
 
 pub trait View {
-    fn handle_event(&mut self, event: Event, app_state: Arc<AppState>) -> Option<Box<dyn View + Send>>;
+    fn handle_event(&mut self, event: Event) -> Option<Box<dyn View + Send>>;
 
-    fn draw(&mut self, f: &mut Frame<CrosstermBackend<Stdout>>, app_state: Arc<AppState>);
+    fn draw(&mut self, f: &mut Frame<CrosstermBackend<Stdout>>);
 }
 
 #[derive(Default)]
@@ -29,7 +27,7 @@ pub struct AppsTableView {
 }
 
 impl View for AppsTableView {
-    fn handle_event(&mut self, event: Event, app_state: Arc<AppState>) -> Option<Box<dyn View + Send>> {
+    fn handle_event(&mut self, event: Event) -> Option<Box<dyn View + Send>> {
         match event {
             Event::Key(key_event) => {
                 match key_event.code {
@@ -50,11 +48,7 @@ impl View for AppsTableView {
                     KeyCode::Enter => {
                         if let Some(selected) = self.table_state.selected() {
                             if let Some(app) = self.items.values().nth(selected) {
-                                let mut lock = app_state.packet_retriever.lock().unwrap();
-                                let mut packet_retriever = PacketRetriever::new(app.clone());
-                                packet_retriever.run();
-                                *lock = Some(packet_retriever);
-                                return Some(Box::new(ProcessPacketsView::new(app.clone())));
+                                return Some(Box::new(AppPacketsView::new(app.clone())));
                             }
                         }
                     }
@@ -67,7 +61,7 @@ impl View for AppsTableView {
         None
     }
 
-    fn draw(&mut self, f: &mut Frame<CrosstermBackend<Stdout>>, _: Arc<AppState>) {
+    fn draw(&mut self, f: &mut Frame<CrosstermBackend<Stdout>>) {
         let rects = Layout::default()
             .constraints([Constraint::Percentage(100)].as_ref())
             .split(f.size());
@@ -164,7 +158,7 @@ impl AppsTableView {
 pub struct WelcomeScreen {}
 
 impl View for WelcomeScreen {
-    fn handle_event(&mut self, event: Event, _: Arc<AppState>) -> Option<Box<dyn View + Send>> {
+    fn handle_event(&mut self, event: Event) -> Option<Box<dyn View + Send>> {
         match event {
             Event::Key(key_event) => {
                 if let KeyCode::Char(key) = key_event.code {
@@ -182,7 +176,7 @@ impl View for WelcomeScreen {
         None
     }
 
-    fn draw(&mut self, f: &mut Frame<CrosstermBackend<Stdout>>, _: Arc<AppState>) {
+    fn draw(&mut self, f: &mut Frame<CrosstermBackend<Stdout>>) {
         let text = vec![
             Spans::from(Span::raw("Legend:")),
             Spans::from(Span::raw("l - show list of apps with open ports")),
@@ -198,13 +192,14 @@ impl View for WelcomeScreen {
     }
 }
 
-pub struct ProcessPacketsView {
+pub struct AppPacketsView {
     app: App,
-    table_state: TableState
+    table_state: TableState,
+    packet_retriever: PacketRetriever
 }
 
-impl View for ProcessPacketsView {
-    fn handle_event(&mut self, event: Event, _: Arc<AppState>) -> Option<Box<dyn View + Send>> {
+impl View for AppPacketsView {
+    fn handle_event(&mut self, event: Event) -> Option<Box<dyn View + Send>> {
         match event {
             Event::Key(key_event) => {
                 if let KeyCode::Backspace = key_event.code {
@@ -217,7 +212,7 @@ impl View for ProcessPacketsView {
         None
     }
 
-    fn draw(&mut self, f: &mut Frame<CrosstermBackend<Stdout>>, app_state: Arc<AppState>) {
+    fn draw(&mut self, f: &mut Frame<CrosstermBackend<Stdout>>) {
         let rects = Layout::default()
             .constraints([Constraint::Percentage(100)].as_ref())
             .split(f.size());
@@ -231,29 +226,27 @@ impl View for ProcessPacketsView {
             .bottom_margin(1);
 
         let mut rows = vec![];
-        if let Some(ref packet_retriever) = *app_state.packet_retriever.lock().unwrap() {
-            let packets = packet_retriever.packets.clone();
-            let mut i = 0;
-            let y = f.size().height - 2;
-            for packet in &*packets {
-                if i == y {
-                    break;
-                }
-
-                rows.push(Row::new([
-                    Cell::from(packet.ip_header.formatted_src_ip()),
-                    Cell::from(packet.tp_header.src_port().to_string()),
-                    Cell::from(packet.ip_header.formatted_src_ip()),
-                    Cell::from(packet.tp_header.dst_port().to_string()),
-                    match &packet.tp_header {
-                        TransportHeader::TCP(_) => Cell::from("TCP"),
-                        TransportHeader::UDP(_) => Cell::from("UDP"),
-                        TransportHeader::Default(_) => Cell::from("UNKNOWN")
-                    }
-                ]));
-
-                i += 1;
+        let packets = self.packet_retriever.packets.clone();
+        let mut i = 0;
+        let y = f.size().height - 2;
+        for packet in &*packets {
+            if i == y {
+                break;
             }
+
+            rows.push(Row::new([
+                Cell::from(packet.ip_header.formatted_src_ip()),
+                Cell::from(packet.tp_header.src_port().to_string()),
+                Cell::from(packet.ip_header.formatted_src_ip()),
+                Cell::from(packet.tp_header.dst_port().to_string()),
+                match &packet.tp_header {
+                    TransportHeader::TCP(_) => Cell::from("TCP"),
+                    TransportHeader::UDP(_) => Cell::from("UDP"),
+                    TransportHeader::Default(_) => Cell::from("UNKNOWN")
+                }
+            ]));
+
+            i += 1;
         }
 
         let t = Table::new(rows)
@@ -272,11 +265,15 @@ impl View for ProcessPacketsView {
     }
 }
 
-impl ProcessPacketsView {
-    pub fn new(app: App) -> ProcessPacketsView {
-        ProcessPacketsView {
+impl AppPacketsView {
+    pub fn new(app: App) -> AppPacketsView {
+        let mut packet_retriever = PacketRetriever::new(app.clone());
+        packet_retriever.run();
+
+        AppPacketsView {
             app,
-            table_state: Default::default()
+            table_state: Default::default(),
+            packet_retriever
         }
     }
 }

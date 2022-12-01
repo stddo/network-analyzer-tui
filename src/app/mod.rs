@@ -5,7 +5,6 @@ use ui::event::EventHandler;
 use ui::views::WelcomeScreen;
 use ui::Window;
 
-use crate::app::core::PacketRetriever;
 use crate::app::ui::views::View;
 
 mod core;
@@ -36,16 +35,14 @@ impl App {
 
 pub struct AppState {
     running: Mutex<bool>,
-    view: Mutex<Box<dyn View + Send>>,
-    packet_retriever: Mutex<Option<PacketRetriever>>
+    view: Mutex<Box<dyn View + Send>>
 }
 
 impl AppState {
     fn new() -> AppState {
         AppState {
             running: Mutex::new(true),
-            view: Mutex::new(Box::new(WelcomeScreen::default())),
-            packet_retriever: Mutex::new(None)
+            view: Mutex::new(Box::new(WelcomeScreen::default()))
         }
     }
 

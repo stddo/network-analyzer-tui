@@ -51,7 +51,7 @@ impl EventHandler {
 
 fn delegate_event(app_state: &Arc<AppState>, event: Event) {
     let mut lock = app_state.view.lock().unwrap();
-    if let Some(view) = lock.handle_event(event, app_state.clone()) {
+    if let Some(view) = lock.handle_event(event) {
         *lock = view;
     }
 }

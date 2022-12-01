@@ -41,7 +41,7 @@ impl Window {
             while *app_state.running.lock().unwrap() {
                 terminal.draw(|f| {
                     let mut lock = app_state.view.lock().unwrap();
-                    lock.draw(f, app_state.clone());
+                    lock.draw(f);
                 }).unwrap();
 
                 let delay = Duration::from_millis(100).saturating_sub(last_time.elapsed());
