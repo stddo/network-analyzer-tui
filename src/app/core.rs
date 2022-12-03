@@ -44,22 +44,22 @@ impl PacketRetriever {
         self.join_handle = Some(thread::spawn(move || {
             let sniffer = Sniffer::new();
             sniffer.sniff(|packet| {
-                let packet = match &packet.tp_header {
-                    TransportHeader::TCP(tcp) => {
-                        if app.processes.iter().any(|process| {
-                            tcp.dst_port == process.local_port || tcp.dst_port == process.remote_port || tcp.src_port == process.local_port || tcp.src_port == process.remote_port
-                        }) {
-                            Some(packet)
-                        } else { None }
-                    }
-                    _ => { None }
-                };
-
-                if let Some(packet) = packet {
+                if PacketRetriever::accept(&packet, &app) {
                     packets.add(packet);
                 }
                 return !*running.lock().unwrap();
             });
         }));
     }
+
+    fn accept(packet: &Packet, app: &Arc<App>) -> bool {
+        app.processes.iter().any(|process| {
+            match &packet.tp_header {
+                TransportHeader::TCP(tcp) => tcp.dst_port == process.local_port || tcp.src_port == process.local_port,
+                TransportHeader::UDP(udp) => udp.dst_port == process.local_port || udp.src_port == process.local_port,
+                _ => false
+            }
+        })
+    }
 }
+

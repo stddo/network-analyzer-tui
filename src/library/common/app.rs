@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 
 #[cfg(target_os = "windows")]
-use crate::library::windows::tcp_table::collect_open_ports_by_app;
+use crate::library::windows::collect_open_ports_by_app;
 
 #[derive(Clone)]
 pub struct App {
@@ -39,10 +39,7 @@ impl App {
 
 #[derive(Clone)]
 pub struct LocalProcess {
-    pub local_ip: u32,
     pub local_port: u16,
-    pub remote_ip: u32,
-    pub remote_port: u16,
     pub pid: u32
 }
 

@@ -68,7 +68,7 @@ impl View for AppsTableView {
 
         let selected_style = Style::default().add_modifier(Modifier::REVERSED);
         let normal_style = Style::default().bg(Color::Blue);
-        let header_cells = ["pid", "name", "remote port", "local port"].iter().map(|h| Cell::from(*h));
+        let header_cells = ["pid", "name", "local port"].iter().map(|h| Cell::from(*h));
         let header = Row::new(header_cells)
             .style(normal_style)
             .height(1)
@@ -78,9 +78,6 @@ impl View for AppsTableView {
             let cells = vec![
                 Cell::from(pid.to_string()),
                 Cell::from(app.name.clone()),
-                Cell::from(app.processes.iter()
-                    .map(|process| { process.remote_port.to_string() })
-                    .reduce(|a, b| format!("{}, {}", a, b)).unwrap_or(String::new())),
                 Cell::from(app.processes.iter()
                     .map(|process| { process.local_port.to_string() })
                     .reduce(|a, b| format!("{}, {}", a, b)).unwrap_or(String::new())),
@@ -93,10 +90,9 @@ impl View for AppsTableView {
             .highlight_style(selected_style)
             .highlight_symbol(">> ")
             .widths(&[
-                Constraint::Ratio(1, 4),
-                Constraint::Ratio(1, 4),
-                Constraint::Ratio(1, 4),
-                Constraint::Ratio(1, 4),
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
             ]);
         f.render_stateful_widget(t, rects[0], &mut self.table_state);
     }
@@ -237,7 +233,7 @@ impl View for AppPacketsView {
             rows.push(Row::new([
                 Cell::from(packet.ip_header.formatted_src_ip()),
                 Cell::from(packet.tp_header.src_port().to_string()),
-                Cell::from(packet.ip_header.formatted_src_ip()),
+                Cell::from(packet.ip_header.formatted_dst_ip()),
                 Cell::from(packet.tp_header.dst_port().to_string()),
                 match &packet.tp_header {
                     TransportHeader::TCP(_) => Cell::from("TCP"),
