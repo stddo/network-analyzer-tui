@@ -1,4 +1,5 @@
 use std::net::{IpAddr, Ipv4Addr};
+
 use pcap::{Capture, Device, Error};
 
 use crate::library::common::network::packet::Packet;

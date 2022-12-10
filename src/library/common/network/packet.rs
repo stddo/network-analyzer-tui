@@ -1,5 +1,5 @@
 use crate::network::ethernet2::Ethernet2Header;
-use crate::network::link::internet::IpHeader;
+use crate::network::link::internet::{IpExtension, IpHeader};
 use crate::network::link::internet::transport::application::ApplicationHeader;
 use crate::network::link::internet::transport::TransportHeader;
 use crate::network::ReadError;
@@ -7,6 +7,7 @@ use crate::network::ReadError;
 pub struct Packet {
     pub lp_header: Ethernet2Header,
     pub ip_header: IpHeader,
+    pub ip_extensions: Vec<IpExtension>,
     pub tp_header: TransportHeader,
     pub ap_header: ApplicationHeader
 }
@@ -17,10 +18,11 @@ impl Packet {
 
         let lp_header = Ethernet2Header::new(&mut packet_reader)?;
         let ip_header = IpHeader::new(packet_reader.peek(1)?[0] >> 4, &mut packet_reader)?;
-        let protocol = ip_header.protocol();
+        let (protocol, ip_extensions) = IpExtension::list(ip_header.protocol(), &mut packet_reader)?;
         Ok(Packet {
             lp_header,
             ip_header,
+            ip_extensions,
             tp_header: TransportHeader::new(protocol, &mut packet_reader)?,
             ap_header: ApplicationHeader::new(&mut packet_reader)?
         })

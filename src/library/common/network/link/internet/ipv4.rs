@@ -1,5 +1,5 @@
-use crate::library::common::network::ReadError;
 use crate::library::common::network::packet::PacketReader;
+use crate::library::common::network::ReadError;
 
 pub struct Ipv4Header {
     pub ihl: u8,
@@ -24,10 +24,9 @@ impl Ipv4Header {
         let bytes = packet_reader.read(Self::SIZE)?;
 
         let ihl = bytes[0] & 0x0F;
-        let options_end = ihl as usize * 4;
-
-        let options = if ihl > 5 {
-            packet_reader.read(options_end)?.to_vec()
+        let options_size = TryInto::<usize>::try_into(ihl)? * 4 - Self::SIZE;
+        let options = if options_size > 0 {
+            packet_reader.read(options_size)?.to_vec()
         } else {
             vec![]
         };
@@ -36,15 +35,15 @@ impl Ipv4Header {
             ihl,
             dscp: bytes[1] >> 2,
             ecn: bytes[1] & 0x03,
-            total_length: u16::from_be_bytes(bytes[2..4].try_into().unwrap()),
-            identification: u16::from_be_bytes(bytes[4..6].try_into().unwrap()),
+            total_length: u16::from_be_bytes(bytes[2..4].try_into()?),
+            identification: u16::from_be_bytes(bytes[4..6].try_into()?),
             flags: IPv4Flags::new(bytes[6]),
-            fragment_offset: u16::from_be_bytes(bytes[6..8].try_into().unwrap()) & 0x1FFF,
+            fragment_offset: u16::from_be_bytes(bytes[6..8].try_into()?) & 0x1FFF,
             ttl: bytes[8],
             protocol: bytes[9],
-            header_checksum: u16::from_be_bytes(bytes[10..12].try_into().unwrap()),
-            src_addr: bytes[12..16].try_into().unwrap(),
-            dst_addr: bytes[16..20].try_into().unwrap(),
+            header_checksum: u16::from_be_bytes(bytes[10..12].try_into()?),
+            src_addr: bytes[12..16].try_into()?,
+            dst_addr: bytes[16..20].try_into()?,
             options
         })
     }

@@ -1,5 +1,5 @@
-use crate::library::common::network::ReadError;
 use crate::library::common::network::packet::PacketReader;
+use crate::library::common::network::ReadError;
 
 pub struct TCPHeader {
     pub src_port: u16,
@@ -22,25 +22,24 @@ impl TCPHeader {
         let bytes = packet_reader.read(Self::SIZE)?;
 
         let data_offset = bytes[12] >> 4;
-        let options_end = data_offset as usize * 4;
-
-        let options = if data_offset > 5 {
-            packet_reader.read(options_end)?.to_vec()
+        let options_size = TryInto::<usize>::try_into(data_offset)? * 4 - Self::SIZE;
+        let options = if options_size > 0 {
+            packet_reader.read(options_size)?.to_vec()
         } else {
             vec![]
         };
 
         Ok(TCPHeader {
-            src_port: u16::from_be_bytes(bytes[..2].try_into().unwrap()),
-            dst_port: u16::from_be_bytes(bytes[2..4].try_into().unwrap()),
-            sequence_number: u32::from_be_bytes(bytes[4..8].try_into().unwrap()),
-            ack: u32::from_be_bytes(bytes[8..12].try_into().unwrap()),
+            src_port: u16::from_be_bytes(bytes[..2].try_into()?),
+            dst_port: u16::from_be_bytes(bytes[2..4].try_into()?),
+            sequence_number: u32::from_be_bytes(bytes[4..8].try_into()?),
+            ack: u32::from_be_bytes(bytes[8..12].try_into()?),
             data_offset,
             reserved: bytes[12] & 0x0E,
-            flags: TCPFlags::new(&bytes[12..14].try_into().unwrap()),
-            window_size: u16::from_be_bytes(bytes[14..16].try_into().unwrap()),
-            checksum: u16::from_be_bytes(bytes[16..18].try_into().unwrap()),
-            urgent_pointer: u16::from_be_bytes(bytes[18..20].try_into().unwrap()),
+            flags: TCPFlags::new(&bytes[12..14].try_into()?),
+            window_size: u16::from_be_bytes(bytes[14..16].try_into()?),
+            checksum: u16::from_be_bytes(bytes[16..18].try_into()?),
+            urgent_pointer: u16::from_be_bytes(bytes[18..20].try_into()?),
             options
         })
     }

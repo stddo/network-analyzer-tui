@@ -1,6 +1,7 @@
 use std::mem;
-use crate::library::common::network::ReadError;
+
 use crate::library::common::network::packet::PacketReader;
+use crate::library::common::network::ReadError;
 
 pub struct Ethernet2Header {
     pub destination: [u8; 6],
@@ -15,9 +16,9 @@ impl Ethernet2Header {
         let bytes = packet_reader.read(Self::SIZE)?;
 
         Ok(Ethernet2Header {
-            destination: bytes[..6].try_into().unwrap(),
-            source: bytes[6..12].try_into().unwrap(),
-            ether_type: u16::from_be_bytes(bytes[12..14].try_into().unwrap())
+            destination: bytes[..6].try_into()?,
+            source: bytes[6..12].try_into()?,
+            ether_type: u16::from_be_bytes(bytes[12..14].try_into()?)
         })
     }
 }
