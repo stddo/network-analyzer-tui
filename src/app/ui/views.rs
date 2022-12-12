@@ -2,15 +2,14 @@ use std::collections::HashMap;
 use std::io::Stdout;
 
 use crossterm::event::{Event, KeyCode};
+use network_sniffer::app::App;
+use network_sniffer::network::link::internet::transport::TransportHeader;
 use tui::backend::CrosstermBackend;
 use tui::Frame;
 use tui::layout::{Constraint, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState};
-
-use network_analyzer::app::App;
-use network_analyzer::network::link::internet::transport::TransportHeader;
 
 use crate::app::core::PacketRetriever;
 

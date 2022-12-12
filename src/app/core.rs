@@ -2,10 +2,10 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 
-use network_analyzer::app::App;
-use network_analyzer::network::link::internet::transport::TransportHeader;
-use network_analyzer::network::packet::Packet;
-use network_analyzer::pcap::Sniffer;
+use network_sniffer::app::App;
+use network_sniffer::network::link::internet::transport::TransportHeader;
+use network_sniffer::network::packet::Packet;
+use network_sniffer::pcap::Sniffer;
 
 use crate::app::core::multithreading::RwList;
 
