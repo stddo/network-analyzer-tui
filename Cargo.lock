@@ -214,7 +214,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "network-analyzer"
+name = "network-analyzer-tui"
 version = "0.1.0"
 dependencies = [
  "crossterm",
